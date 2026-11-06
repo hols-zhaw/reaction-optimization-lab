@@ -16,12 +16,26 @@ import pandas as pd
 from .reactor import FACTORS, ReactorParams, active_factors, measure
 
 STRATEGIES = ("OFAT", "Designed experiment", "Free choice", "Bayesian optimization")
+STRATEGY_RULES = {
+    "OFAT": "Change one factor at a time, and keep the others at your best values so far. Use the Experiment page.",
+    "Designed experiment": "Vary several factors at once in a planned set of runs. Use the Design and Analyse pages.",
+    "Free choice": "Use any mix of single runs and designs, and change your plan as you learn.",
+}
 BO_TEAM = "BO"
 MEASURED = ("margin", "yield", "conversion", "peak_temperature")
 
 
 class BudgetError(ValueError):
     pass
+
+
+def breaks_ofat(frame: pd.DataFrame, factors) -> bool:
+    """True if the latest run differs from every earlier run in more than one factor."""
+    if len(frame) < 2:
+        return False
+    values = frame[[f.key for f in factors]].to_numpy(dtype=float)
+    changed = (~np.isclose(values[:-1], values[-1])).sum(axis=1)
+    return bool(changed.min() > 1)
 
 
 @dataclass

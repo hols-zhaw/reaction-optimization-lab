@@ -1,8 +1,10 @@
 import pandas as pd
 import streamlit as st
 
-from lab.store import BudgetError
-from lab.ui import current_team, factor_inputs, get_store, run_batch, show_runs
+from lab.reactor import temperature_profile
+from lab.store import BudgetError, breaks_ofat
+from lab.ui import (current_team, factor_inputs, get_store, outlet_figure, progress_figure, run_batch, settings_figure,
+                    show_runs, temperature_figure)
 
 store = get_store()
 
@@ -24,13 +26,33 @@ with st.form("single_experiment"):
         if run_batch(store, code, [conditions], "manual"):
             st.rerun()
 
-st.subheader("Your experiments")
 frame = store.runs_frame(code)
+if not frame.empty:
+    if store.team(code).strategy == "OFAT" and breaks_ofat(frame, store.factors):
+        st.warning("Your strategy is OFAT, but your latest run changes more than one factor compared with every earlier run.")
+    st.subheader("Your search so far")
+    left, right = st.columns(2)
+    left.plotly_chart(progress_figure(frame), width="stretch")
+    right.plotly_chart(settings_figure(frame, store.factors), width="stretch")
+
+st.subheader("Your experiments")
 if frame.empty:
     st.caption("No experiments yet.")
 else:
     show_runs(store, frame)
     st.download_button("Download as CSV", frame.to_csv(index=False), f"runs_{code}.csv", "text/csv")
+
+    st.subheader("Look at one experiment")
+    number = st.selectbox("Experiment", frame["run"].tolist()[::-1], help="The latest one comes first.")
+    run = frame[frame["run"] == number].iloc[0]
+    selected = {f.key: float(run[f.key]) for f in store.factors}
+    st.markdown(", ".join(f"{f.label} {selected[f.key]:.4g} {f.unit}" for f in store.factors)
+                + f". Measured margin: **{run['margin']:.3f}**.")
+    left, right = st.columns(2)
+    position, temperature = temperature_profile(store.params, selected)
+    left.plotly_chart(temperature_figure(position, temperature, selected["wall_temperature"]), width="stretch")
+    right.plotly_chart(outlet_figure(run["conversion"], run["yield"]), width="stretch")
+    st.caption("The temperature curve leaves out measurement noise. The outlet composition is as measured.")
 
 st.subheader("Your recommendation")
 st.caption("State your final recommended conditions. This uses no experiment, and you can change it until the reveal.")

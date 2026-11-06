@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 290" width="880" height="290" font-family="Helvetica, Arial, sans-serif" fill="#0b0b0b">
+  <defs>
+    <linearGradient id="temperature" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#f7ede6"/>
+      <stop offset="0.1" stop-color="#eb6834"/>
+      <stop offset="0.45" stop-color="#f6c3ab"/>
+      <stop offset="1" stop-color="#f7ede6"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#52514e"/>
+    </marker>
+  </defs>
+
+  <rect x="170" y="44" width="520" height="172" rx="10" fill="#cde2fb" stroke="#86b6ef"/>
+  <text x="430" y="72" text-anchor="middle" font-size="16">Cooling jacket: holds the tube wall at Tw</text>
+
+  <rect x="150" y="100" width="560" height="76" fill="url(#temperature)" stroke="#0b0b0b" stroke-width="2"/>
+  <text x="440" y="146" text-anchor="middle" font-size="24">A → P → S</text>
+  <text x="206" y="210" text-anchor="middle" font-size="15">Hot spot</text>
+  <path d="M206 195 L206 178" stroke="#52514e" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <path d="M30 138 L146 138" stroke="#52514e" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="30" y="106" font-size="16" font-weight="bold">Feed</text>
+  <text x="30" y="126" font-size="15">A at c0, at Tw</text>
+
+  <path d="M714 138 L850 138" stroke="#52514e" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="724" y="106" font-size="16" font-weight="bold">Outlet</text>
+  <text x="724" y="126" font-size="15">A, P and S</text>
+
+  <path d="M150 248 L710 248" stroke="#52514e" stroke-width="2" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="430" y="274" text-anchor="middle" font-size="16">Residence time tau: how long the liquid stays in the tube</text>
+</svg>

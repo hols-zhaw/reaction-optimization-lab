@@ -39,8 +39,8 @@ class Factor:
 
 
 FACTORS = (
-    Factor("wall_temperature", "Wall temperature", "Tw", "K", 310.0, 370.0, 1.0),
-    Factor("residence_time", "Residence time", "tau", "min", 20.0, 120.0, 1.0),
+    Factor("wall_temperature", "Wall temperature", "Tw", "K", 320.0, 365.0, 1.0),
+    Factor("residence_time", "Residence time", "tau", "min", 35.0, 110.0, 1.0),
     Factor("feed_concentration", "Feed concentration", "c0", "mol/m³", 500.0, 4000.0, 50.0),
     Factor("catalyst_loading", "Catalyst loading", "L", "relative", 0.5, 2.0, 0.05),
 )
@@ -72,10 +72,8 @@ class ReactorParams:
     noise_sd_temperature: float  # K
 
 
-def simulate(params: ReactorParams, wall_temperature, residence_time, feed_concentration,
-             catalyst_loading=BASELINE_LOADING) -> dict:
-    """Noise-free steady state for one set of conditions. Residence time in minutes."""
-    tau = residence_time * 60.0
+def _integrate(params: ReactorParams, wall_temperature, tau, feed_concentration, catalyst_loading, t_eval=None):
+    """Solve the balances along the tube. Tau in seconds."""
     area_per_volume = 4.0 / params.tube_diameter
 
     def rhs(_, y):
@@ -86,8 +84,15 @@ def simulate(params: ReactorParams, wall_temperature, residence_time, feed_conce
         exchange = params.U * (wall_temperature - temp) * area_per_volume
         return [-k1 * c_a, k1 * c_a - k2 * c_p, (heat + exchange) / (params.rho * params.cp)]
 
-    sol = solve_ivp(rhs, [0.0, tau], [feed_concentration, 0.0, wall_temperature],
-                    method="LSODA", rtol=1e-5, atol=1e-3)
+    return solve_ivp(rhs, [0.0, tau], [feed_concentration, 0.0, wall_temperature],
+                     method="LSODA", rtol=1e-5, atol=1e-3, t_eval=t_eval)
+
+
+def simulate(params: ReactorParams, wall_temperature, residence_time, feed_concentration,
+             catalyst_loading=BASELINE_LOADING) -> dict:
+    """Noise-free steady state for one set of conditions. Residence time in minutes."""
+    tau = residence_time * 60.0
+    sol = _integrate(params, wall_temperature, tau, feed_concentration, catalyst_loading)
     c_a, c_p = sol.y[0, -1], sol.y[1, -1]
     yield_p = c_p / feed_concentration
     conversion = 1.0 - c_a / feed_concentration
@@ -111,6 +116,20 @@ def conditions_to_args(conditions: dict) -> dict:
 
 def true_response(params: ReactorParams, conditions: dict) -> dict:
     return simulate(params, **conditions_to_args(conditions))
+
+
+def temperature_profile(params: ReactorParams, conditions: dict, points: int = 101) -> tuple[np.ndarray, np.ndarray]:
+    """Noise-free temperature along the tube, against the fraction of its length.
+
+    The app shows only temperature along the tube. Concentrations along the tube would
+    give away the yield at every shorter residence time in a single experiment.
+    """
+    args = conditions_to_args(conditions)
+    tau = args["residence_time"] * 60.0
+    times = np.linspace(0.0, tau, points)
+    sol = _integrate(params, args["wall_temperature"], tau, args["feed_concentration"],
+                     args["catalyst_loading"], t_eval=times)
+    return times / tau, sol.y[2]
 
 
 def measure(params: ReactorParams, conditions: dict, rng: np.random.Generator) -> dict:

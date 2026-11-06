@@ -8,7 +8,8 @@ The reactor is a series reaction A → P → S in a cooled plug-flow tube. **The
 
 | Page | For | What it does |
 |---|---|---|
-| Experiment | Teams | Run single experiments, download runs, state a final recommendation |
+| Introduction | Everyone | The reaction, the reactor, what teams set and measure, and how to play |
+| Experiment | Teams | Run single experiments, follow the search in charts, look at one run's temperature and outlet composition, download runs, state a final recommendation |
 | Design | Teams | Create a full factorial, Box-Behnken or central composite design for chosen ranges, and run it |
 | Analyse | Teams | Look at runs, fit a response surface model, inspect effects and slices, test the predicted optimum |
 | Leaderboard | Everyone | Best measured margin per team |

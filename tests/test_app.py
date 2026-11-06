@@ -33,7 +33,7 @@ def join(at, code="TEAM1"):
     assert not at.exception, at.exception
     at.text_input(key="team_code_input").set_value(code).run()
     assert not at.exception, at.exception
-    return at
+    return open_page(at, "experiment")
 
 
 def click(at, label):
@@ -42,9 +42,18 @@ def click(at, label):
     return at
 
 
-def test_starts_without_team_and_asks_for_code(app):
+def test_starts_on_introduction_without_a_team(app):
     app.run()
-    assert not app.exception
+    assert not app.exception, app.exception
+    assert app.title[0].value == "Introduction"
+    assert len(app.latex) == 2
+    ranges = app.table[0].value["Allowed range"].tolist()
+    assert ranges == ["320 to 365 K", "35 to 110 min", "500 to 4000 mol/m³"]
+
+
+def test_experiment_page_asks_for_team_code(app):
+    app.run()
+    open_page(app, "experiment")
     assert any("team code" in i.value for i in app.info)
 
 
@@ -58,6 +67,41 @@ def test_single_experiment_updates_budget(app):
     click(app, "Run experiment")
     assert app.metric[0].value == "14"
     assert len(app.dataframe) == 1
+
+
+def test_allowed_ranges_are_shown_at_the_inputs(app):
+    join(app)
+    captions = [c.value for c in app.caption]
+    assert "Allowed: 320 to 365 K" in captions
+    assert "Allowed: 500 to 4000 mol/m³" in captions
+
+
+def test_experiment_page_shows_charts_only_after_a_run(app):
+    join(app)
+    assert not app.get("plotly_chart")
+    click(app, "Run experiment")
+    assert len(app.get("plotly_chart")) == 4
+    headings = [s.value for s in app.subheader]
+    assert headings.index("Run one experiment") < headings.index("Your search so far") < headings.index("Your experiments")
+    click(app, "Run experiment")
+    next(s for s in app.selectbox if s.label == "Experiment").set_value(1).run()
+    assert not app.exception, app.exception
+    assert any("Measured margin" in m.value for m in app.markdown)
+
+
+def test_strategy_rule_and_ofat_warning(app):
+    join(app)
+    assert any("any mix" in c.value for c in app.caption)
+    next(s for s in app.selectbox if s.label == "Strategy").set_value("OFAT").run()
+    assert any("one factor at a time" in c.value for c in app.caption)
+    click(app, "Run experiment")
+    app.number_input(key="experiment_wall_temperature").set_value(330.0)
+    click(app, "Run experiment")
+    assert not app.warning
+    app.number_input(key="experiment_residence_time").set_value(90.0)
+    app.number_input(key="experiment_feed_concentration").set_value(1000.0)
+    click(app, "Run experiment")
+    assert any("more than one factor" in w.value for w in app.warning)
 
 
 def test_design_then_analyse_full_workflow(app):
@@ -157,6 +201,8 @@ def test_four_factor_game_runs_from_design_to_reveal(app):
     open_page(app, "analyse")
     assert "R²" in [m.label for m in app.metric]
     assert any(s.label.startswith("Hold") for s in app.slider)
+    open_page(app, "introduction")
+    assert "Catalyst loading" in app.table[0].value["Factor"].tolist()
     open_page(app, "experiment")
     click(app, "Save recommendation")
     open_page(app, "instructor")

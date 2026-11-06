@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-from lab.store import BO_TEAM, STRATEGIES
+from lab.store import BO_TEAM, STRATEGIES, STRATEGY_RULES
 from lab.ui import get_store
 
 st.set_page_config(page_title="Reaction Optimization Lab", layout="wide")
@@ -27,13 +27,15 @@ with st.sidebar:
         choices = [s for s in STRATEGIES if s != "Bayesian optimization"]
         current = team.strategy if team.strategy in choices else choices[-1]
         strategy = st.selectbox("Strategy", choices, index=choices.index(current))
+        st.caption(STRATEGY_RULES[strategy])
         store.team(code, strategy)
         used = len(store.team(code).runs)
         st.metric("Experiments left", store.budget - used, help=f"Budget: {store.budget} experiments")
         st.progress(min(used / store.budget, 1.0))
 
 navigation = st.navigation([
-    st.Page("views/experiment.py", title="Experiment", default=True),
+    st.Page("views/introduction.py", title="Introduction", default=True),
+    st.Page("views/experiment.py", title="Experiment"),
     st.Page("views/design.py", title="Design"),
     st.Page("views/analyse.py", title="Analyse"),
     st.Page("views/leaderboard.py", title="Leaderboard"),

@@ -6,8 +6,8 @@ from pyDOE3 import bbdesign, ff2n
 from lab import bo
 from lab.analysis import MODELS, code, fit_model, model_size, slice_best, slice_grid
 from lab.designs import box_behnken, central_composite, full_factorial, to_conditions
-from lab.reactor import FACTORS, active_factors, simulate, true_response
-from lab.store import BudgetError, GameStore
+from lab.reactor import FACTORS, active_factors, simulate, temperature_profile, true_response
+from lab.store import BudgetError, GameStore, breaks_ofat
 
 F3 = active_factors(3)
 
@@ -114,6 +114,25 @@ def test_more_catalyst_speeds_up_conversion(params):
     low = simulate(params, 330.0, 30.0, 1000.0, catalyst_loading=0.5)["conversion"]
     high = simulate(params, 330.0, 30.0, 1000.0, catalyst_loading=2.0)["conversion"]
     assert high > low
+
+
+def test_temperature_profile_matches_the_simulation(params):
+    conditions = {"wall_temperature": 340.0, "residence_time": 40.0, "feed_concentration": 3000.0}
+    position, temperature = temperature_profile(params, conditions, points=2001)
+    assert position[0] == 0.0 and position[-1] == 1.0
+    assert temperature[0] == pytest.approx(340.0)
+    assert temperature.max() == pytest.approx(true_response(params, conditions)["peak_temperature"], abs=0.1)
+
+
+def test_ofat_check_compares_with_every_earlier_run():
+    frame = pd.DataFrame({"wall_temperature": [330.0, 340.0, 350.0], "residence_time": [60.0, 60.0, 60.0],
+                          "feed_concentration": [2000.0, 2000.0, 2000.0]})
+    assert not breaks_ofat(frame.iloc[:1], F3)
+    assert not breaks_ofat(frame, F3)
+    moved_to_best = pd.concat([frame, frame.iloc[[0]].assign(residence_time=90.0)])
+    assert not breaks_ofat(moved_to_best, F3)
+    two_changes = pd.concat([frame, frame.iloc[[0]].assign(residence_time=90.0, feed_concentration=3000.0)])
+    assert breaks_ofat(two_changes, F3)
 
 
 def test_real_constants_reproduce_the_feasibility_test(real_params, real_check):
