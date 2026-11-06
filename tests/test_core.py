@@ -8,6 +8,7 @@ from lab.analysis import MODELS, code, fit_model, model_size, slice_best, slice_
 from lab.designs import box_behnken, central_composite, full_factorial, to_conditions
 from lab.reactor import FACTORS, active_factors, simulate, temperature_profile, true_response
 from lab.store import BudgetError, GameStore, breaks_ofat
+from lab.ui import surface_figure
 
 F3 = active_factors(3)
 
@@ -114,6 +115,15 @@ def test_more_catalyst_speeds_up_conversion(params):
     low = simulate(params, 330.0, 30.0, 1000.0, catalyst_loading=0.5)["conversion"]
     high = simulate(params, 330.0, 30.0, 1000.0, catalyst_loading=2.0)["conversion"]
     assert high > low
+
+
+def test_surface_margins_do_not_depend_on_the_labels():
+    grid = np.linspace(0.0, 1.0, 3)
+    short = surface_figure(grid, grid, np.eye(3), "x", "y", "Short")
+    long = surface_figure(grid, grid, 100 * np.eye(3), "A long x label", "A long y label", "A much longer value label")
+    assert short.layout.margin == long.layout.margin
+    assert short.layout.margin.autoexpand is False
+    assert short.layout.yaxis.automargin is False and short.layout.xaxis.automargin is False
 
 
 def test_temperature_profile_matches_the_simulation(params):

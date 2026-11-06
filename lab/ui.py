@@ -109,15 +109,18 @@ def surface_figure(x, y, z, x_label: str, y_label: str, value_label: str,
              else [[i / (len(SEQUENTIAL) - 1), c] for i, c in enumerate(SEQUENTIAL)])
     contour = dict(x=x, y=y, z=z, colorscale=scale, line=dict(width=0.5, color=MUTED),
                    contours=dict(coloring="heatmap", showlabels=True, labelfont=dict(size=11, color=INK)),
-                   colorbar=dict(title=value_label, thickness=12),
+                   colorbar=dict(title=dict(text=value_label, side="right"), thickness=12),
                    hovertemplate=f"{x_label}: %{{x:.4g}}<br>{y_label}: %{{y:.4g}}<br>{value_label}: %{{z:.3f}}<extra></extra>")
     if has_sign_change:
         # Very negative regions would otherwise wash out the detail around the optimum.
         contour.update(zmid=0, zmin=max(float(np.nanmin(z)), -1.5 * top), zmax=top)
     fig = go.Figure(go.Contour(**contour))
-    fig.update_layout(height=height, margin=dict(l=10, r=10, t=30, b=10), paper_bgcolor=SURFACE,
+    # Fixed margins, so that the plot area does not depend on the labels and surfaces line up across tabs.
+    fig.update_layout(height=height, margin=dict(l=80, r=90, t=40, b=60, autoexpand=False), paper_bgcolor=SURFACE,
                       plot_bgcolor=SURFACE, xaxis_title=x_label, yaxis_title=y_label,
                       font=dict(color=INK), legend=dict(orientation="h", y=1.08, x=0))
+    fig.update_xaxes(automargin=False)
+    fig.update_yaxes(automargin=False)
     return fig
 
 
