@@ -37,16 +37,20 @@ class Surrogate:
 def fit_surrogate(coded: np.ndarray, measured: np.ndarray) -> Surrogate:
     n_factors = coded.shape[1]
     mean, scale = float(measured.mean()), float(measured.std()) + 1e-9
-    kernel = (ConstantKernel(1.0)
-              * Matern(length_scale=[0.6] * n_factors, length_scale_bounds=(0.15, 5), nu=2.5)
-              + WhiteKernel(1e-2, (1e-5, 1)))
+    kernel = ConstantKernel(1.0) * Matern(
+        length_scale=[0.6] * n_factors, length_scale_bounds=(0.15, 5), nu=2.5
+    ) + WhiteKernel(1e-2, (1e-5, 1))
     gp = GaussianProcessRegressor(kernel=kernel, random_state=1)
     gp.fit(coded, (measured - mean) / scale)
     return Surrogate(gp, mean, scale, float(measured.max()))
 
 
-def propose(surrogate: Surrogate, n_factors: int, rng: np.random.Generator,
-            candidates: int = 2000) -> dict:
+def propose(
+    surrogate: Surrogate,
+    n_factors: int,
+    rng: np.random.Generator,
+    candidates: int = 2000,
+) -> dict:
     """The next experiment, with the numbers needed to discuss why it was chosen."""
     points = rng.uniform(-1, 1, (candidates, n_factors))
     improvement = surrogate.expected_improvement(points)
@@ -61,7 +65,11 @@ def propose(surrogate: Surrogate, n_factors: int, rng: np.random.Generator,
     }
 
 
-def recommend(surrogate: Surrogate, n_factors: int, rng: np.random.Generator,
-              candidates: int = 4000) -> np.ndarray:
+def recommend(
+    surrogate: Surrogate,
+    n_factors: int,
+    rng: np.random.Generator,
+    candidates: int = 4000,
+) -> np.ndarray:
     points = rng.uniform(-1, 1, (candidates, n_factors))
     return points[int(np.argmax(surrogate.predict(points)[0]))]

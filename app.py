@@ -8,15 +8,21 @@ from lab.ui import get_store
 st.set_page_config(page_title="Reaction Optimization Lab", layout="wide")
 
 if "reactor" not in st.secrets or "instructor_password" not in st.secrets:
-    st.error("The reactor settings are missing. See README.md for how to set up the secrets.")
+    st.error(
+        "The reactor settings are missing. See README.md for how to set up the secrets."
+    )
     st.stop()
 
 store = get_store()
 
 with st.sidebar:
     st.subheader("Your team")
-    entered = st.text_input("Team code", key="team_code_input", max_chars=20,
-                            help="Choose a short code, not your names. Your runs are saved under this code.")
+    entered = st.text_input(
+        "Team code",
+        key="team_code_input",
+        max_chars=20,
+        help="Choose a short code, not your names. Your runs are saved under this code.",
+    )
     code = entered.strip().upper()
     if code == BO_TEAM:
         st.error("This code is reserved. Please choose another one.")
@@ -30,15 +36,21 @@ with st.sidebar:
         st.caption(STRATEGY_RULES[strategy])
         store.team(code, strategy)
         used = len(store.team(code).runs)
-        st.metric("Experiments left", store.budget - used, help=f"Budget: {store.budget} experiments")
+        st.metric(
+            "Experiments left",
+            store.budget - used,
+            help=f"Budget: {store.budget} experiments",
+        )
         st.progress(min(used / store.budget, 1.0))
 
-navigation = st.navigation([
-    st.Page("views/introduction.py", title="Introduction", default=True),
-    st.Page("views/experiment.py", title="Experiment"),
-    st.Page("views/design.py", title="Design"),
-    st.Page("views/analyse.py", title="Analyse"),
-    st.Page("views/leaderboard.py", title="Leaderboard"),
-    st.Page("views/instructor.py", title="Instructor"),
-])
+navigation = st.navigation(
+    [
+        st.Page("views/introduction.py", title="Introduction", default=True),
+        st.Page("views/experiment.py", title="Experiment"),
+        st.Page("views/design.py", title="Design"),
+        st.Page("views/analyse.py", title="Analyse"),
+        st.Page("views/leaderboard.py", title="Leaderboard"),
+        st.Page("views/instructor.py", title="Instructor"),
+    ]
+)
 navigation.run()

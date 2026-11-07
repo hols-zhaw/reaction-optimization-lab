@@ -63,13 +63,20 @@ class GameStore:
     def factors(self):
         return active_factors(self.n_factors)
 
-    def configure(self, budget: int | None = None, n_factors: int | None = None) -> None:
+    def configure(
+        self, budget: int | None = None, n_factors: int | None = None
+    ) -> None:
         with self.lock:
             if budget is not None:
                 self.budget = int(budget)
             if n_factors is not None:
-                if any(team.runs for team in self.teams.values()) and int(n_factors) != self.n_factors:
-                    raise ValueError("Reset the game before changing the number of factors.")
+                if (
+                    any(team.runs for team in self.teams.values())
+                    and int(n_factors) != self.n_factors
+                ):
+                    raise ValueError(
+                        "Reset the game before changing the number of factors."
+                    )
                 self.n_factors = int(n_factors)
             self._save()
 
@@ -79,8 +86,12 @@ class GameStore:
             self._save()
 
     def _save(self) -> None:
-        state = {"budget": self.budget, "n_factors": self.n_factors, "seed": self.seed,
-                 "teams": {code: asdict(team) for code, team in self.teams.items()}}
+        state = {
+            "budget": self.budget,
+            "n_factors": self.n_factors,
+            "seed": self.seed,
+            "teams": {code: asdict(team) for code, team in self.teams.items()},
+        }
         temporary = self.path.with_suffix(".tmp")
         temporary.write_text(json.dumps(state))
         temporary.replace(self.path)
@@ -124,11 +135,15 @@ class GameStore:
             if len(team.runs) + len(conditions) > self.budget:
                 raise BudgetError(
                     f"{len(conditions)} experiments do not fit into your remaining budget "
-                    f"of {self.budget - len(team.runs)}.")
+                    f"of {self.budget - len(team.runs)}."
+                )
             new_runs = []
             for point in conditions:
                 number = len(team.runs) + 1
-                clean = {f.key: float(np.clip(point[f.key], f.low, f.high)) for f in self.factors}
+                clean = {
+                    f.key: float(np.clip(point[f.key], f.low, f.high))
+                    for f in self.factors
+                }
                 result = measure(self.params, clean, self._rng(code, number))
                 row = {"run": number, "source": source, **clean, **result}
                 team.runs.append(row)
@@ -138,7 +153,9 @@ class GameStore:
 
     def recommend(self, code: str, conditions: dict) -> None:
         with self.lock:
-            self.team(code).recommendation = {f.key: float(conditions[f.key]) for f in self.factors}
+            self.team(code).recommendation = {
+                f.key: float(conditions[f.key]) for f in self.factors
+            }
             self._save()
 
     def restore(self, code: str, csv_frame: pd.DataFrame) -> int:
@@ -146,9 +163,13 @@ class GameStore:
         needed = ["run", "source", *[f.key for f in self.factors], *MEASURED]
         missing = [column for column in needed if column not in csv_frame.columns]
         if missing:
-            raise ValueError(f"This file is not a run table. Missing: {', '.join(missing)}.")
+            raise ValueError(
+                f"This file is not a run table. Missing: {', '.join(missing)}."
+            )
         if len(csv_frame) > self.budget:
-            raise BudgetError(f"This file has more runs than the budget of {self.budget}.")
+            raise BudgetError(
+                f"This file has more runs than the budget of {self.budget}."
+            )
         with self.lock:
             self.team(code).runs = csv_frame[needed].to_dict("records")
             self._save()
@@ -167,12 +188,25 @@ class GameStore:
             rows = []
             for team in self.teams.values():
                 best = max((run["margin"] for run in team.runs), default=None)
-                rows.append({"Team": team.code, "Strategy": team.strategy,
-                             "Experiments used": len(team.runs),
-                             "Best measured margin": best,
-                             "Recommendation made": team.recommendation is not None})
-        return pd.DataFrame(rows, columns=["Team", "Strategy", "Experiments used",
-                                           "Best measured margin", "Recommendation made"])
+                rows.append(
+                    {
+                        "Team": team.code,
+                        "Strategy": team.strategy,
+                        "Experiments used": len(team.runs),
+                        "Best measured margin": best,
+                        "Recommendation made": team.recommendation is not None,
+                    }
+                )
+        return pd.DataFrame(
+            rows,
+            columns=[
+                "Team",
+                "Strategy",
+                "Experiments used",
+                "Best measured margin",
+                "Recommendation made",
+            ],
+        )
 
 
 def factor_labels() -> dict:

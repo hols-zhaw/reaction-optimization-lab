@@ -44,7 +44,9 @@ DESIGNS = {
 }
 
 
-def to_conditions(coded: np.ndarray, factors: tuple[Factor, ...], ranges: dict) -> pd.DataFrame:
+def to_conditions(
+    coded: np.ndarray, factors: tuple[Factor, ...], ranges: dict
+) -> pd.DataFrame:
     """Translate coded levels into real conditions for the chosen low and high values."""
     table = {}
     for i, factor in enumerate(factors):

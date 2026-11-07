@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 @pytest.fixture
 def app(tmp_path, monkeypatch, params):
     import streamlit as st
+
     monkeypatch.setenv("LAB_DATA_PATH", str(tmp_path / "state.json"))
     st.cache_resource.clear()
     st.cache_data.clear()
@@ -82,7 +83,11 @@ def test_experiment_page_shows_charts_only_after_a_run(app):
     click(app, "Run experiment")
     assert len(app.get("plotly_chart")) == 4
     headings = [s.value for s in app.subheader]
-    assert headings.index("Run one experiment") < headings.index("Your search so far") < headings.index("Your experiments")
+    assert (
+        headings.index("Run one experiment")
+        < headings.index("Your search so far")
+        < headings.index("Your experiments")
+    )
     click(app, "Run experiment")
     next(s for s in app.selectbox if s.label == "Experiment").set_value(1).run()
     assert not app.exception, app.exception
@@ -173,7 +178,9 @@ def test_reveal_shows_true_surface(app):
     click(app, "Run experiment")
     click(app, "Save recommendation")
     login(app)
-    next(c for c in app.checkbox if c.label.startswith("Show the results")).check().run()
+    next(
+        c for c in app.checkbox if c.label.startswith("Show the results")
+    ).check().run()
     assert not app.exception, app.exception
     assert any("Best conditions" in m.value for m in app.markdown)
 
@@ -182,7 +189,9 @@ def test_reset_clears_the_game(app):
     join(app)
     click(app, "Run experiment")
     login(app)
-    next(c for c in app.checkbox if c.label.startswith("I want to delete")).check().run()
+    next(
+        c for c in app.checkbox if c.label.startswith("I want to delete")
+    ).check().run()
     click(app, "Reset the game")
     open_page(app, "experiment")
     assert app.metric[0].value == "15"
@@ -206,6 +215,8 @@ def test_four_factor_game_runs_from_design_to_reveal(app):
     open_page(app, "experiment")
     click(app, "Save recommendation")
     open_page(app, "instructor")
-    next(c for c in app.checkbox if c.label.startswith("Show the results")).check().run()
+    next(
+        c for c in app.checkbox if c.label.startswith("Show the results")
+    ).check().run()
     assert not app.exception, app.exception
     assert any("Best conditions" in m.value for m in app.markdown)

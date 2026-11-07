@@ -21,15 +21,20 @@ st.markdown(
 )
 
 st.subheader("The reaction")
-st.latex(r"\mathrm{A} \xrightarrow{\;k_1\;} \mathrm{P} \xrightarrow{\;k_2\;} \mathrm{S}")
+st.latex(
+    r"\mathrm{A} \xrightarrow{\;k_1\;} \mathrm{P} \xrightarrow{\;k_2\;} \mathrm{S}"
+)
 st.markdown(
     "A is the feed, P is the product you want, and S is a by-product. P forms from A and then reacts further to S, "
     "so more reaction is not always better. Both steps release heat, and both run faster at higher temperature."
 )
 
 st.subheader("The reactor")
-st.image(str(Path(__file__).resolve().parents[1] / "assets" / "reactor.svg"), width=880,
-         alt="Cooled tube reactor: feed A enters on the left, A reacts to P and S along the tube, and a hot spot forms near the inlet.")
+st.image(
+    str(Path(__file__).resolve().parents[1] / "assets" / "reactor.svg"),
+    width=880,
+    alt="Cooled tube reactor: feed A enters on the left, A reacts to P and S along the tube, and a hot spot forms near the inlet.",
+)
 st.markdown(
     "This is a plug-flow tube: the liquid moves through like a series of small batches that do not mix with each other. "
     "The wall removes heat. Near the inlet, where the reaction is fastest, the temperature can rise above the wall "
@@ -37,22 +42,45 @@ st.markdown(
 )
 
 st.subheader("What you set")
-factors = pd.DataFrame([
-    {"Symbol": f.symbol, "Factor": f.label, "Allowed range": f"{f.low:g} to {f.high:g} {f.unit}", "Meaning": MEANINGS[f.key]}
-    for f in store.factors
-]).set_index("Symbol")
+factors = pd.DataFrame(
+    [
+        {
+            "Symbol": f.symbol,
+            "Factor": f.label,
+            "Allowed range": f"{f.low:g} to {f.high:g} {f.unit}",
+            "Meaning": MEANINGS[f.key],
+        }
+        for f in store.factors
+    ]
+).set_index("Symbol")
 st.table(factors, alt="The factors you can set, with their allowed ranges and meaning")
 st.caption("The Analyse page uses these symbols.")
 
 st.subheader("What you measure")
-results = pd.DataFrame([
-    {"Result": "Margin", "Meaning": "The score you want to maximise: profit per reactor volume and hour, in relative units."},
-    {"Result": "Yield of P", "Meaning": "Share of the feed that leaves as product P."},
-    {"Result": "Conversion of A", "Meaning": "Share of the feed that has reacted, to either P or S."},
-    {"Result": "Peak temperature", "Meaning": "Highest temperature along the tube, in K. This is the top of the hot spot."},
-]).set_index("Result")
+results = pd.DataFrame(
+    [
+        {
+            "Result": "Margin",
+            "Meaning": "The score you want to maximise: profit per reactor volume and hour, in relative units.",
+        },
+        {
+            "Result": "Yield of P",
+            "Meaning": "Share of the feed that leaves as product P.",
+        },
+        {
+            "Result": "Conversion of A",
+            "Meaning": "Share of the feed that has reacted, to either P or S.",
+        },
+        {
+            "Result": "Peak temperature",
+            "Meaning": "Highest temperature along the tube, in K. This is the top of the hot spot.",
+        },
+    ]
+).set_index("Result")
 st.table(results, alt="The results of each experiment and their meaning")
-st.latex(r"\text{margin} = \frac{c_0}{\tau}\,(v \cdot Y - 1) - C_\mathrm{cat} - C_\mathrm{hot}")
+st.latex(
+    r"\text{margin} = \frac{c_0}{\tau}\,(v \cdot Y - 1) - C_\mathrm{cat} - C_\mathrm{hot}"
+)
 st.markdown(
     "Here, $c_0/\\tau$ is the feed rate in kmol/(m³ h), $Y$ is the yield, and $v$ is the value of P relative to the "
     "cost of A. $C_\\mathrm{cat}$ is the catalyst cost, and $C_\\mathrm{hot}$ is a penalty above a temperature limit."

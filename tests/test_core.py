@@ -6,7 +6,13 @@ from pyDOE3 import bbdesign, ff2n
 from lab import bo
 from lab.analysis import MODELS, code, fit_model, model_size, slice_best, slice_grid
 from lab.designs import box_behnken, central_composite, full_factorial, to_conditions
-from lab.reactor import FACTORS, active_factors, simulate, temperature_profile, true_response
+from lab.reactor import (
+    FACTORS,
+    active_factors,
+    simulate,
+    temperature_profile,
+    true_response,
+)
 from lab.store import BudgetError, GameStore, breaks_ofat
 from lab.ui import surface_figure
 
@@ -40,14 +46,22 @@ def test_central_composite_is_face_centred_and_inside_range():
 
 
 def test_to_conditions_uses_chosen_ranges():
-    table = to_conditions(np.array([[-1.0, 0.0, 1.0]]), F3, {f.key: (f.low + 1, f.high - 1) for f in F3})
-    assert table.iloc[0].tolist() == [F3[0].low + 1, (F3[1].low + F3[1].high) / 2, F3[2].high - 1]
+    table = to_conditions(
+        np.array([[-1.0, 0.0, 1.0]]), F3, {f.key: (f.low + 1, f.high - 1) for f in F3}
+    )
+    assert table.iloc[0].tolist() == [
+        F3[0].low + 1,
+        (F3[1].low + F3[1].high) / 2,
+        F3[2].high - 1,
+    ]
 
 
 def test_coding_round_trip():
     for factor in FACTORS:
         assert factor.to_coded(factor.low) == -1 and factor.to_coded(factor.high) == 1
-        assert factor.from_coded(factor.to_coded(factor.low + 1)) == pytest.approx(factor.low + 1)
+        assert factor.from_coded(factor.to_coded(factor.low + 1)) == pytest.approx(
+            factor.low + 1
+        )
 
 
 def known_surface(coded):
@@ -63,7 +77,9 @@ def design_frame(coded, response):
 
 def test_fit_recovers_known_quadratic_and_optimum():
     design = box_behnken(3, 3)
-    result = fit_model(design_frame(design, known_surface(design)), F3, "margin", MODELS[2])
+    result = fit_model(
+        design_frame(design, known_surface(design)), F3, "margin", MODELS[2]
+    )
     table = result.table.set_index("Term")["Coefficient"]
     assert table["Intercept"] == pytest.approx(1.0)
     assert table["Tw × tau"] == pytest.approx(0.4)
@@ -81,8 +97,12 @@ def test_fit_matches_plain_least_squares():
     noisy = known_surface(design) + rng.normal(0, 0.05, len(design))
     result = fit_model(design_frame(design, noisy), F3, "margin", MODELS[2])
     a, b, c = design.T
-    matrix = np.column_stack([np.ones(len(a)), a, b, c, a * b, a * c, b * c, a * a, b * b, c * c])
-    assert result.fit.params == pytest.approx(np.linalg.lstsq(matrix, noisy, rcond=None)[0])
+    matrix = np.column_stack(
+        [np.ones(len(a)), a, b, c, a * b, a * c, b * c, a * a, b * b, c * c]
+    )
+    assert result.fit.params == pytest.approx(
+        np.linalg.lstsq(matrix, noisy, rcond=None)[0]
+    )
 
 
 def test_model_too_large_for_data_is_refused():
@@ -120,34 +140,59 @@ def test_more_catalyst_speeds_up_conversion(params):
 def test_surface_margins_do_not_depend_on_the_labels():
     grid = np.linspace(0.0, 1.0, 3)
     short = surface_figure(grid, grid, np.eye(3), "x", "y", "Short")
-    long = surface_figure(grid, grid, 100 * np.eye(3), "A long x label", "A long y label", "A much longer value label")
+    long = surface_figure(
+        grid,
+        grid,
+        100 * np.eye(3),
+        "A long x label",
+        "A long y label",
+        "A much longer value label",
+    )
     assert short.layout.margin == long.layout.margin
     assert short.layout.margin.autoexpand is False
-    assert short.layout.yaxis.automargin is False and short.layout.xaxis.automargin is False
+    assert (
+        short.layout.yaxis.automargin is False
+        and short.layout.xaxis.automargin is False
+    )
 
 
 def test_temperature_profile_matches_the_simulation(params):
-    conditions = {"wall_temperature": 340.0, "residence_time": 40.0, "feed_concentration": 3000.0}
+    conditions = {
+        "wall_temperature": 340.0,
+        "residence_time": 40.0,
+        "feed_concentration": 3000.0,
+    }
     position, temperature = temperature_profile(params, conditions, points=2001)
     assert position[0] == 0.0 and position[-1] == 1.0
     assert temperature[0] == pytest.approx(340.0)
-    assert temperature.max() == pytest.approx(true_response(params, conditions)["peak_temperature"], abs=0.1)
+    assert temperature.max() == pytest.approx(
+        true_response(params, conditions)["peak_temperature"], abs=0.1
+    )
 
 
 def test_ofat_check_compares_with_every_earlier_run():
-    frame = pd.DataFrame({"wall_temperature": [330.0, 340.0, 350.0], "residence_time": [60.0, 60.0, 60.0],
-                          "feed_concentration": [2000.0, 2000.0, 2000.0]})
+    frame = pd.DataFrame(
+        {
+            "wall_temperature": [330.0, 340.0, 350.0],
+            "residence_time": [60.0, 60.0, 60.0],
+            "feed_concentration": [2000.0, 2000.0, 2000.0],
+        }
+    )
     assert not breaks_ofat(frame.iloc[:1], F3)
     assert not breaks_ofat(frame, F3)
     moved_to_best = pd.concat([frame, frame.iloc[[0]].assign(residence_time=90.0)])
     assert not breaks_ofat(moved_to_best, F3)
-    two_changes = pd.concat([frame, frame.iloc[[0]].assign(residence_time=90.0, feed_concentration=3000.0)])
+    two_changes = pd.concat(
+        [frame, frame.iloc[[0]].assign(residence_time=90.0, feed_concentration=3000.0)]
+    )
     assert breaks_ofat(two_changes, F3)
 
 
 def test_real_constants_reproduce_the_feasibility_test(real_params, real_check):
     conditions = {f.key: real_check[f.key] for f in active_factors(3)}
-    assert true_response(real_params, conditions)["margin"] == pytest.approx(real_check["margin"], abs=0.002)
+    assert true_response(real_params, conditions)["margin"] == pytest.approx(
+        real_check["margin"], abs=0.002
+    )
 
 
 def centre(factors):
@@ -218,7 +263,9 @@ def test_bo_prefers_the_promising_region():
     surrogate = bo.fit_surrogate(coded, measured)
     proposal = bo.propose(surrogate, 3, np.random.default_rng(4))
     assert np.abs(proposal["coded"]).max() <= 1
-    assert np.linalg.norm(bo.recommend(surrogate, 3, np.random.default_rng(5)) - 0.5) < 0.6
+    assert (
+        np.linalg.norm(bo.recommend(surrogate, 3, np.random.default_rng(5)) - 0.5) < 0.6
+    )
 
 
 def test_code_maps_limits_to_plus_minus_one():
