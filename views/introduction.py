@@ -42,6 +42,10 @@ st.markdown(
 )
 
 st.subheader("What you set")
+st.markdown(
+    "A first round of scouting runs has already narrowed each factor to the range below. "
+    "You cannot set values outside it."
+)
 factors = pd.DataFrame(
     [
         {
